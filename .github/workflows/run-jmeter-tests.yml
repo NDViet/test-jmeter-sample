@@ -1,0 +1,38 @@
+name: Run JMeter Tests
+on:
+  push:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@main
+      - name: Set up Node
+        uses: actions/setup-node@main
+        with:
+          node-version: 'latest'
+      - name: Start server API
+        working-directory: sample-api
+        run: |
+          npm install
+          npm start &
+      - name: Run JMeter Tests
+        uses: QAInsights/PerfAction@master
+        with:
+          test-plan-path: jmeter-files/test-plan.jmx
+          args: "-Jdomain=localhost -Jport=6060 -Jnum_threads=3000 -e -f -o reports"
+      - name: Upload Results
+        uses: actions/upload-artifact@main
+        with:
+          name: jmeter-results
+          path: reports,result.jtl
+      - name: Publish Results with Latency Lingo
+        uses: latency-lingo/github-action@main
+        with:
+          api-key: ${{ secrets.LATENCY_LINGO_API_KEY }}
+          file: result.jtl
+          label: Checkout Flow Automated Test Plan
+          format: jmeter
