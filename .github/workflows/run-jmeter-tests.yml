@@ -19,16 +19,19 @@ jobs:
         run: |
           npm install
           npm start &
+          echo "SERVER_IP=$(hostname -I | awk '{print $1}')" >> $GITHUB_ENV
       - name: Run JMeter Tests
         uses: QAInsights/PerfAction@master
         with:
           test-plan-path: jmeter-files/test-plan.jmx
-          args: "-Jdomain=localhost -Jport=6060 -Jnum_threads=3000 -e -f -o reports"
+          args: "-Jdomain=${{ env.SERVER_IP }} -Jport=6060 -Jnum_threads=3000 -e -f -o reports"
       - name: Upload Results
         uses: actions/upload-artifact@main
         with:
           name: jmeter-results
-          path: reports,result.jtl
+          path: |
+            reports
+            result.jtl
       - name: Publish Results with Latency Lingo
         uses: latency-lingo/github-action@main
         with:
